@@ -91,7 +91,7 @@ public void OnClientPutInServer(int client) {
  * Increments a player's stattrak.
  */
 public Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast) {
-    int client = GetClientOfUserId(event.GetInt("attacker"));
+    int client = GetClientOfUserId(event.GetInt("userid"));
     if(!IsClientValid(client)) {
         return Plugin_Continue;
     }
@@ -101,7 +101,7 @@ public Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadca
         return Plugin_Continue;
     }
 
-    g_bLaserEnabled[client] = true;
+    g_bLaserEnabled[client] = false;
 
     return Plugin_Continue;
 }
