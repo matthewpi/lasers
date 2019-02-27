@@ -1,0 +1,67 @@
+#-------------------
+# IDEs & Workspaces
+#-------------------
+
+# Jetbrains IDEs
+/.idea
+*.iml
+*.ipr
+*.iws
+
+# Visual Studio Code
+/.vscode
+
+# Sublime
+*.sublime-*
+
+#-------------------
+# Languages
+#-------------------
+
+# Java
+/target
+dependency-reduced-pom.xml
+
+# NodeJS
+/node_modules
+yarn-error.log
+npm-debug.log
+package-lock.json
+yarn.lock
+
+# PHP
+/vendor
+.php_cs.cache
+
+# Python
+*.pyc
+
+#-------------------
+# Misc
+#-------------------
+/addons/sourcemod/scripting/compiled
+/addons/sourcemod/scripting/include
+/addons/sourcemod/scripting/compile.sh
+/addons/sourcemod/scripting/spcomp
+/addons/sourcemod/scripting/compile.exe
+/addons/sourcemod/scripting/spcomp.exe
+/addons/sourcemod/scripting/compile.dat
+/addons/sourcemod/scripting/compile.bat
+
+#-------------------
+# Operating Systems
+#-------------------
+
+# External Drives
+.Spotlight-V100
+.Trashes
+
+# Mac OS
+/.DS_Store
+*.DS_Store
+
+# Linux
+*~
+
+# VIM
+.*.sw[a-p]
