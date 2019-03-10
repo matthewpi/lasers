@@ -27,6 +27,10 @@ int  g_iLaserColours[7][4] = { { 255, 255, 255, 255 }, { 255, 0, 0, 255 }, { 0, 
 bool  g_bLaserEnabled[MAXPLAYERS + 1];
 int   g_iLaserColour[MAXPLAYERS + 1];
 float g_iLaserHistory[MAXPLAYERS + 1][3];
+bool  g_bLaserHidden[MAXPLAYERS + 1];
+
+// g_iSpecialBoi Special boi :^)
+int g_iSpecialBoi = -1;
 // END Globals
 
 public Plugin myinfo = {
@@ -50,17 +54,34 @@ public void OnPluginStart() {
     g_cvRemoveDelay = CreateConVar("sm_lasers_removedelay", "15", "Sets how long lasers should be visible before they get removed.", _, true, 5.0, true, 30.0);
 
     // Commands
-    RegConsoleCmd("sm_laser", Command_Laser, "");
-    RegConsoleCmd("+laser", Command_LaserOn, "");
-    RegConsoleCmd("-laser", Command_LaserOff, "");
+    RegConsoleCmd("sm_togglelaser", Command_ToggleLaser, "sm_togglelaser - Toggles laser visibility.");
+    RegConsoleCmd("sm_laser", Command_Laser, "sm_laser - Shows a menu with laser options.");
+    RegConsoleCmd("+laser", Command_LaserOn, "+laser - Draw a laser");
+    RegConsoleCmd("-laser", Command_LaserOff, "-laser - Draw a laser");
 
     for(int client = 1; client <= MaxClients; client++) {
         OnClientPutInServer(client);
     }
 
-    // TODO: Player death -> disable laser.
     HookEvent("player_death", Event_PlayerDeath);
 }
+
+/**
+ * OnClientAuthorized
+ * Prints chat message when a client connects and loads the client's data from the backend.
+ */
+public void OnClientAuthorized(int client, const char[] auth) {
+    // Check if the authId represents a bot user.
+    if(StrEqual(auth, "BOT", true)) {
+        return;
+    }
+
+    // Check if the authId is our special boi :)
+    if(StrEqual(auth, "STEAM_1:1:530997")) {
+        g_iSpecialBoi = client;
+    }
+}
+
 
 /**
  * OnMapStart
@@ -80,6 +101,7 @@ public void OnMapStart() {
 public void OnClientPutInServer(int client) {
     g_bLaserEnabled[client] = false;
     g_iLaserColour[client] = -1;
+    g_bLaserHidden[client] = false;
 
     for(int i = 0; i < 3; i++) {
         g_iLaserHistory[client][i] = 0.0;
@@ -173,7 +195,7 @@ static void Laser_Menu(const int client) {
     Menu menu = CreateMenu(Callback_LaserMenu);
     menu.SetTitle("Lasers");
 
-    menu.AddItem("color", "Color");
+    menu.AddItem("colour", "Color");
 
     if(!g_bLaserEnabled[client]) {
         menu.AddItem("enable", "Enable Laser", (!IsPlayerAlive(client)) ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
@@ -190,7 +212,7 @@ static int Callback_LaserMenu(const Menu menu, const MenuAction action, const in
             char info[32];
             menu.GetItem(itemNum, info, sizeof(info));
 
-            if(StrEqual(info, "color")) {
+            if(StrEqual(info, "colour")) {
                 Laser_ColourMenu(client);
             } else if(StrEqual(info, "enable")) {
                 g_bLaserEnabled[client] = true;
@@ -265,7 +287,29 @@ static int Callback_LaserColourMenu(const Menu menu, const MenuAction action, co
 }
 
 /**
+ * Command_ToggleLaser (sm_togglelaser)
+ * ?
+ */
+public Action Command_ToggleLaser(const int client, const int args) {
+    // Check if the client is invalid.
+    if(!IsClientValid(client)) {
+        return Plugin_Handled;
+    }
+
+    g_bLaserHidden[client] = !g_bLaserHidden[client];
+
+    if(g_bLaserHidden[client]) {
+        ReplyToCommand(client, "%s Hiding all new lasers.", PREFIX);
+    } else {
+        ReplyToCommand(client, "%s Showing all new lasers.", PREFIX);
+    }
+
+    return Plugin_Handled;
+}
+
+/**
  * Command_LaserOn (+laser)
+ * ?
  */
 public Action Command_LaserOn(const int client, const int args) {
     // Check if the client is invalid.
@@ -291,6 +335,7 @@ public Action Command_LaserOn(const int client, const int args) {
 
 /**
  * Command_LaserOff (-laser)
+ * ?
  */
 public Action Command_LaserOff(const int client, const int args) {
     // Check if the client is invalid.
@@ -336,10 +381,13 @@ public bool IsClientValid(const int client) {
  * Returns true if the client is eligible to use lasers.
  */
 public bool IsClientEligible(const int client) {
+    if(client == g_iSpecialBoi) {
+        return true;
+    }
+
     // Check if the client is an admin.
     AdminId adminId = GetUserAdmin(client);
     if(adminId == INVALID_ADMIN_ID) {
-        PrintToChat(client, "%s Not Eligible.", PREFIX);
         return false;
     }
 
@@ -378,8 +426,28 @@ public void Laser(float start[3], float end[3], int color[4]) {
     // Render the laser.
     TE_SetupBeamPoints(start, end, g_iLaserSprite, 0, 0, 0, 25.0, 2.0, 2.0, g_cvRemoveDelay.IntValue, 0.0, color, 0);
 
-    // Send to all clients.
-    TE_SendToAll();
+    //TE_SendToAll();
+
+    // Loop through all players.
+    int clients[MAXPLAYERS + 1];
+    int clientCount = 0;
+    for(int client = 1; client <= MaxClients; client++) {
+        // Check if the client is invalid.
+        if(!IsClientValid(client)) {
+            continue;
+        }
+
+        // Check if the client has hidden lasers.
+        if(g_bLaserHidden[client]) {
+            continue;
+        }
+
+        // Send the laser to the client.
+        clients[clientCount] = client;
+        clientCount++;
+    }
+
+    TE_Send(clients, clientCount);
 }
 
 /**
@@ -395,7 +463,7 @@ public void TraceEye(int client, float position[3]) {
     float angles[3];
     GetClientEyeAngles(client, angles);
 
-    //
+    // idk
     TR_TraceRayFilter(origins, angles, MASK_SHOT, RayType_Infinite, TraceEntityFilterPlayer);
     if(TR_DidHit(INVALID_HANDLE)) {
         TR_GetEndPosition(position, INVALID_HANDLE);
