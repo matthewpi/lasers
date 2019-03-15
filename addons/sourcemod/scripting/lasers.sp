@@ -54,7 +54,7 @@ public void OnPluginStart() {
     g_cvRemoveDelay = CreateConVar("sm_lasers_removedelay", "15", "Sets how long lasers should be visible before they get removed.", _, true, 5.0, true, 30.0);
 
     // Commands
-    RegConsoleCmd("sm_togglelaser", Command_ToggleLaser, "sm_togglelaser - Toggles laser visibility.");
+    RegConsoleCmd("sm_togglelasers", Command_ToggleLasers, "sm_togglelasers - Toggles laser visibility.");
     RegConsoleCmd("sm_laser", Command_Laser, "sm_laser - Shows a menu with laser options.");
     RegConsoleCmd("+laser", Command_LaserOn, "+laser - Draw a laser");
     RegConsoleCmd("-laser", Command_LaserOff, "-laser - Draw a laser");
@@ -215,10 +215,10 @@ static int Callback_LaserMenu(const Menu menu, const MenuAction action, const in
             if(StrEqual(info, "colour")) {
                 Laser_ColourMenu(client);
             } else if(StrEqual(info, "enable")) {
-                g_bLaserEnabled[client] = true;
+                Command_LaserOn(client, 0);
                 Laser_Menu(client);
             } else if(StrEqual(info, "disable")) {
-                g_bLaserEnabled[client] = false;
+                Command_LaserOff(client, 0);
                 Laser_Menu(client);
             } else {
                 Laser_Menu(client);
@@ -287,10 +287,10 @@ static int Callback_LaserColourMenu(const Menu menu, const MenuAction action, co
 }
 
 /**
- * Command_ToggleLaser (sm_togglelaser)
+ * Command_ToggleLasers (sm_togglelasers)
  * ?
  */
-public Action Command_ToggleLaser(const int client, const int args) {
+public Action Command_ToggleLasers(const int client, const int args) {
     // Check if the client is invalid.
     if(!IsClientValid(client)) {
         return Plugin_Handled;
