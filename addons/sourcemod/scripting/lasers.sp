@@ -20,6 +20,8 @@
 ConVar g_cvAdminFlag;
 ConVar g_cvRemoveDelay;
 
+AdminFlag g_hAdminFlag;
+
 int g_iLaserSprite;
 //char g_cLaserColours[7][16] = {        "White",              "Red",              "Green",             "Blue",              "Yellow",            "Aqua",               "Pink"        };
 //int  g_iLaserColours[7][4] =  { { 255, 255, 255, 255 }, { 255, 0, 0, 255 }, { 0, 255, 0, 255 }, { 0, 0, 255, 255 }, { 255, 255, 0, 255 }, { 0, 255, 255, 255 }, { 255, 0, 255, 255 } };
@@ -75,6 +77,17 @@ public void OnPluginStart() {
     }
 
     HookEvent("player_death", Event_PlayerDeath);
+}
+
+public void OnConfigsExecuted() {
+    // Get the admin flag convar value.
+    char buffer[2];
+    g_cvAdminFlag.GetString(buffer, sizeof(buffer));
+
+    // Get the admin flag from the convar.
+    if (!FindFlagByChar(buffer[0], g_hAdminFlag)) {
+        LogMessage("%s Failed to get admin flag from \"sm_lasers_adminflag\"", CONSOLE_PREFIX);
+    }
 }
 
 /**
@@ -431,19 +444,8 @@ public bool IsClientEligible(const int client) {
         return false;
     }
 
-    // Get the admin flag convar value.
-    char buffer[2];
-    g_cvAdminFlag.GetString(buffer, sizeof(buffer));
-
-    // Get the admin flag from the convar.
-    AdminFlag flag;
-    if (!FindFlagByChar(buffer[0], flag)) {
-        LogMessage("%s Failed to get admin flag from \"sm_lasers_adminflag\"", CONSOLE_PREFIX);
-        return false;
-    }
-
     // Check if the admin has the admin flag.
-    if (!GetAdminFlag(adminId, flag)) {
+    if (!GetAdminFlag(adminId, g_hAdminFlag)) {
         return false;
     }
 
@@ -464,7 +466,7 @@ public bool TraceEntityFilterPlayer(const int entity, const int mask) {
  */
 public void Laser(float start[3], float end[3], int color[4]) {
     // Render the laser.
-    TE_SetupBeamPoints(start, end, g_iLaserSprite, 0, 0, 0, 25.0, 2.0, 2.0, g_cvRemoveDelay.IntValue, 0.0, color, 0);
+    TE_SetupBeamPoints(start, end, g_iLaserSprite, 0, 0, 0, g_cvRemoveDelay.FloatValue, 2.0, 2.0, 1, 0.0, color, 0);
 
     // Loop through all players.
     int clients[MAXPLAYERS + 1];
